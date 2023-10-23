@@ -15,17 +15,18 @@ enum DestinationSearchOptions {
 
 struct DestinationSearchView: View {
     @Binding var show: Bool
-    @State private var destination: String = ""
     @State private var selectedOption: DestinationSearchOptions = .location
     @State private var fromDate: Date = Date()
     @State private var toDate: Date = Date()
     @State var numGuests = 0
+    @ObservedObject var viewModel: ExploreViewModel
     var body: some View {
         VStack() {
             HStack {
                 Button(action: {
                     withAnimation(.snappy) {
                         show.toggle()
+                        viewModel.updateListingForLocation()
                     }
                 }, label: {
                     Image(systemName: "xmark.circle")
@@ -33,9 +34,10 @@ struct DestinationSearchView: View {
                         .foregroundStyle(.black)
             })
                 Spacer()
-                if !destination.isEmpty {
+                if !viewModel.searchLocation.isEmpty {
                     Button("Clear") {
-                        destination = ""
+                        viewModel.searchLocation = ""
+                        viewModel.updateListingForLocation()
                     }
                     .foregroundStyle(.black)
                     .font(.subheadline)
@@ -51,8 +53,12 @@ struct DestinationSearchView: View {
                     HStack {
                         Image(systemName: "magnifyingglass")
                             .imageScale(.small)
-                        TextField("Searching destinations", text: $destination)
+                        TextField("Searching destinations", text: $viewModel.searchLocation)
                             .font(.subheadline)
+                            .onSubmit {
+                                viewModel.updateListingForLocation()
+                                show.toggle()
+                            }
                     }
                     .frame(height: 44)
                     .padding(.horizontal)
@@ -121,7 +127,7 @@ struct DestinationSearchView: View {
 }
 
 #Preview {
-    DestinationSearchView(show: .constant(false))
+    DestinationSearchView(show: .constant(false), viewModel: ExploreViewModel(service: ExploreService()))
 }
 
 struct CollapsedPickerView: View {
